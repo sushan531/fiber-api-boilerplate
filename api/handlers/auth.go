@@ -6,7 +6,9 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sushan531/hk_ims_sqlc/generated"
+	"github.com/sushan531/auth-sqlc/generated"
+	"github.com/sushan531/jwk-auth/core/manager"
+	"github.com/sushan531/jwk-auth/service"
 )
 
 type SignUp struct {
@@ -45,7 +47,7 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 	}
 }
 
-func LoginHandler(queries *generated.Queries) fiber.Handler {
+func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tokenService service.AuthService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		inputBody := new(Login)
 		context := c.Context()
@@ -60,6 +62,64 @@ func LoginHandler(queries *generated.Queries) fiber.Handler {
 		if auth.Password != inputBody.Password {
 			return fiber.ErrUnauthorized
 		}
-		return c.JSON(presenter.SignInSuccessResponse(auth.UserEmail))
+		// Create session key
+		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID, "web")
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "Failed to create session key"})
+		}
+		// Prepare claims
+		claims := make(map[string]interface{})
+		claims["user_id"] = auth.UserProfileID.String()
+		claims["user_email"] = auth.UserEmail
+		claims["role"] = "admin"
+
+		tokenPair, err := tokenService.GenerateTokenPairWithKeyID(claims, keyID)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "Failed to generate tokens"})
+		}
+		return c.JSON(presenter.SignInSuccessResponse(*tokenPair))
 	}
 }
+
+//func VerifyRefreshToken(authService service.AuthService) fiber.Handler {
+//	return func(c *fiber.Ctx) error {
+//		var req struct {
+//			RefreshToken string `json:"refresh_token" binding:"required"`
+//		}
+//		if err := c.BodyParser(&req); err != nil {
+//			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+//		}
+//		claims, err := authService.VerifyRefreshToken(req.RefreshToken)
+//		if err != nil {
+//			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+//		}
+//		authService.GenerateTokenPairWithKeyID()
+//	}
+//}
+//
+//func RefreshTokenHandler(authService service.AuthService) fiber.Handler {
+//	return func(c *fiber.Ctx) error {
+//		var req struct {
+//			RefreshToken string                 `json:"refresh_token"`
+//			Claims       map[string]interface{} `json:"claims,omitempty"`
+//		}
+//
+//		if err := c.BodyParser(&req); err != nil {
+//			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+//		}
+//
+//		// Extract keyID from refresh token
+//		keyID, err := authService.ExtractKeyIDFromToken(req.RefreshToken)
+//		if err != nil {
+//			return c.Status(400).JSON(fiber.Map{"error": "Invalid refresh token"})
+//		}
+//
+//		// Refresh tokens
+//		tokenPair, err := authService.RefreshTokensWithKeyID(req.RefreshToken, req.Claims, keyID)
+//		if err != nil {
+//			return c.Status(401).JSON(fiber.Map{"error": "Failed to refresh tokens"})
+//		}
+//
+//		return c.JSON(tokenPair)
+//	}
+//}
