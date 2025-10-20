@@ -12,5 +12,5 @@ import (
 func AuthRouter(route fiber.Router, queries *generated.Queries, jwkManager manager.JwkManager, tokenService service.AuthService) {
 	route.Post("/signup", handlers.UserSignUpHandler(queries))
 	route.Post("/login", handlers.LoginHandler(queries, jwkManager, tokenService))
-	//route.Post("/refresh", handlers.VerifyRefreshToken(tokenService), handlers.RefreshTokenHandler(tokenService))
+	route.Post("/refresh", handlers.RefreshTokenHandler(queries, tokenService))
 }
