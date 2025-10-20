@@ -1,55 +1,52 @@
----
-inclusion: always
----
-
 # Project Structure
 
-## Directory Organization
+## Architecture Pattern
+This project follows a layered architecture with clear separation of concerns:
 
 ```
-fiber-api/
-├── main.go                 # Application entry point
-├── go.mod                  # Go module definition
-├── go.sum                  # Dependency checksums
-└── api/                    # API layer
-    ├── handlers/           # Request handlers (business logic)
-    │   └── auth.go        # Authentication handlers
-    ├── presenter/          # Response formatters
-    │   └── auth.go        # Authentication response formatting
-    └── routes/             # Route definitions
-        └── auth.go        # Authentication routes
+api/
+├── handlers/          # HTTP request handlers (controllers)
+│   ├── helpers/       # Handler utility functions
+│   ├── auth.go        # Authentication endpoints
+│   └── user.go        # User management endpoints
+├── middleware/        # HTTP middleware (JWT auth, etc.)
+├── models/           # Request/response data structures
+├── presenter/        # Response formatting layer
+├── routes/           # Route definitions and grouping
+└── services/         # Business logic and service layer
 ```
 
-## Architecture Patterns
+## Key Conventions
 
-### Layered Architecture
-- **Routes**: Define HTTP endpoints and route to handlers
-- **Handlers**: Process requests, interact with database, return responses
-- **Presenters**: Format response data consistently
+### Handler Pattern
+- Handlers are factory functions that return `fiber.Handler`
+- Dependencies (queries, services) are injected as parameters
+- Use structured logging with emoji prefixes (🚀, ❌, 🔒)
 
-### Code Organization Rules
-1. **Handlers**: Business logic and database operations
-   - Use dependency injection for database queries
-   - Return Fiber errors for HTTP status codes
-   - Parse request bodies into structs with validation tags
+### Service Layer
+- Services encapsulate business logic and external dependencies
+- Use dependency injection pattern with config structs
+- Services manage their own lifecycle (Close() methods)
 
-2. **Presenters**: Response formatting
-   - Return `*fiber.Map` with consistent structure: `{status, data, error}`
-   - Keep response formatting separate from business logic
+### Models & Data
+- Request/response models in `api/models/`
+- Use struct tags for JSON binding (`json:"field_name"`)
+- Database operations use SQLC generated queries
+- Password hashing with bcrypt before storage
 
-3. **Routes**: HTTP routing configuration
-   - Group related routes (e.g., `/api` prefix)
-   - Pass dependencies (queries) to handlers
-   - Use descriptive route names
+### Authentication Flow
+- JWT tokens with JWK-based signing
+- Middleware extracts and validates Bearer tokens
+- Claims stored in Fiber context as `c.Locals()`
+- Refresh token mechanism for token renewal
 
-### Naming Conventions
-- Handlers: `{Entity}{Action}Handler` (e.g., `UserSignUpHandler`)
-- Routes: `{Entity}Router` (e.g., `AuthRouter`)
-- Presenters: `{Action}Response` (e.g., `SignUpSuccessResponse`)
-- Structs: PascalCase with JSON tags for API models
+### Error Handling
+- Return structured JSON error responses
+- Log errors with context (user email, operation)
+- Use appropriate HTTP status codes
+- Validate input at handler level
 
-### Database Integration
-- Use SQLC generated queries for type safety
-- Pass `*generated.Queries` to handlers via dependency injection
-- Handle SQL null types appropriately (`sql.NullString`, etc.)
-- Use context from Fiber for database operations
+### Route Organization
+- Group routes by functionality (`/api`, `/api/user`)
+- Apply middleware at group level
+- Separate public and protected routes

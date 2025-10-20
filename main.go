@@ -1,56 +1,34 @@
 package main
 
 import (
-	"database/sql"
-	"fiber-api/api/middleware"
-	"fiber-api/api/routes"
-
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	_ "github.com/lib/pq"
-	"github.com/sushan531/auth-sqlc/generated"
-
+	"fiber-api/api/services"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
-
+	_ "github.com/lib/pq"
 	"github.com/sushan531/jwk-auth/core/config"
-	"github.com/sushan531/jwk-auth/core/database"
-	"github.com/sushan531/jwk-auth/core/manager"
-	"github.com/sushan531/jwk-auth/core/repository"
-	"github.com/sushan531/jwk-auth/service"
 )
 
 func main() {
-	dbURL := "postgres://myuser:mypassword@localhost:5432/mydb?sslmode=disable"
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-	defer db.Close()
-
-	app := fiber.New()
-	queries := generated.New(db)
-
+	// Load configuration
 	cfg := config.LoadConfig()
 
-	db, err = database.NewConnection(cfg.Database)
+	// Database URL - you can move this to config later
+	dbURL := "postgres://myuser:mypassword@localhost:5432/mydb?sslmode=disable"
 
-	// Initialize repositories and managers
-	userRepo := repository.NewUserAuthRepository(queries)
-	jwkManager := manager.NewJwkManager(userRepo, cfg)
-	jwtManager := manager.NewJwtManager(jwkManager)
-	authService := service.NewAuthService(jwtManager, jwkManager, cfg)
-
-	app.Use(cors.New())
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Welcome to the Rest api.")
+	// Create server service
+	serverService, err := services.NewAPIServerService(services.ServerConfig{
+		DatabaseURL: dbURL,
+		Port:        "3000",
+		Config:      cfg,
 	})
+	if err != nil {
+		log.Fatal("Failed to create server service:", err)
+	}
+	defer serverService.Close()
 
-	authRoute := app.Group("/api")
-	routes.AuthRouter(authRoute, queries, jwkManager, authService)
+	// Register all routes
+	serverService.RegisterAllRoutes()
 
-	userRoute := app.Group("/api/user", middleware.JWTMiddleware(authService))
-	routes.UserRouter(userRoute, queries)
-
-	log.Fatal(app.Listen(":3000"))
+	// Start the server
+	log.Fatal(serverService.Start())
 }

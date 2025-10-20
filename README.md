@@ -1,48 +1,32 @@
-# Fiber API
+# Fiber Auth API
 
-A REST API built with Go Fiber framework for user management and authentication, featuring PostgreSQL integration and type-safe database queries via SQLC.
-
-## Technology Stack
-
-- **Language**: Go 1.25
-- **Web Framework**: [Fiber v2](https://github.com/gofiber/fiber) - Fast HTTP framework
-- **Database**: PostgreSQL with `lib/pq` driver
-- **Code Generation**: SQLC via `github.com/sushan531/hk_ims_sqlc`
+A Go-based REST API boilerplate for authentication services built with the Fiber framework. This application provides secure user authentication with JWT tokens, JWK-based signing, and PostgreSQL integration.
 
 ## Features
 
-- User signup with profile management
-- PostgreSQL database integration
-- RESTful API design
-- Type-safe database queries with SQLC
-- JSON request/response handling
-- Layered architecture (Routes → Handlers → Presenters)
+- 🔐 User registration and authentication
+- 🔑 JWT token management with refresh tokens
+- 🛡️ JWK (JSON Web Key) based authentication
+- 🗄️ PostgreSQL database integration
+- 👥 Role-based access control
+- 🚀 High-performance Fiber web framework
 
-## Project Structure
+## Tech Stack
 
-```
-fiber-api/
-├── main.go                 # Application entry point
-├── go.mod                  # Go module definition
-├── go.sum                  # Dependency checksums
-└── api/                    # API layer
-    ├── handlers/           # Request handlers (business logic)
-    │   └── auth.go        # Authentication handlers
-    ├── presenter/          # Response formatters
-    │   └── auth.go        # Authentication response formatting
-    └── routes/             # Route definitions
-        └── auth.go        # Authentication routes
-```
+- **Language**: Go 1.25.1
+- **Web Framework**: Fiber v2
+- **Database**: PostgreSQL
+- **Authentication**: JWK-based JWT tokens
+- **Password Hashing**: bcrypt
+- **Database Layer**: SQLC generated queries
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-
-- Go 1.25 or higher
+- Go 1.25.1 or higher
 - PostgreSQL database
 - Git
 
-### Installation
+## Installation
 
 1. Clone the repository:
 ```bash
@@ -52,102 +36,136 @@ cd fiber-api
 
 2. Install dependencies:
 ```bash
-go mod download
+go mod tidy
 ```
 
-3. Set up your database connection:
-   - Update the database URL in `main.go`
-   - Format: `postgres://user:password@host:port/dbname?sslmode=disable`
+3. Set up your PostgreSQL database and update the connection string in `main.go`:
+```go
+dbURL := "postgres://myuser:mypassword@localhost:5432/mydb?sslmode=disable"
+```
 
-### Running the Application
+## Running the Application
 
+### Development
 ```bash
-# Run in development mode
 go run main.go
+```
 
-# Build the application
+### Production Build
+```bash
 go build -o fiber-api
-
-# Run the built binary
 ./fiber-api
 ```
 
-The server will start on `http://localhost:3000`
+The server will start on port 3000 by default.
 
 ## API Endpoints
 
-### Base
-- `GET /` - Welcome message
+### Authentication Routes (`/api`)
 
-### Authentication
-- `POST /api/signup` - User registration
+#### Register User
+```http
+POST /api/signup
+Content-Type: application/json
 
-## Architecture
-
-### Layered Architecture
-
-The project follows a clean layered architecture:
-
-1. **Routes**: Define HTTP endpoints and route to handlers
-2. **Handlers**: Process requests, interact with database, return responses
-3. **Presenters**: Format response data consistently
-
-### Response Format
-
-All API responses follow a consistent structure:
-```json
 {
-  "status": "success|error",
-  "data": {},
-  "error": null
+  "user_email": "user@example.com",
+  "password": "securepassword",
+  "full_name": "John Doe",
+  "user_role": "user"
 }
 ```
 
+#### Login
+```http
+POST /api/login
+Content-Type: application/json
+
+{
+  "user_email": "user@example.com",
+  "password": "securepassword"
+}
+```
+
+#### Refresh Token
+```http
+POST /api/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "your_refresh_token_here"
+}
+```
+
+### Protected User Routes (`/api/user`)
+
+All routes under `/api/user` require a valid JWT token in the Authorization header:
+
+```http
+Authorization: Bearer <your_jwt_token>
+```
+
+## Project Structure
+
+```
+api/
+├── handlers/          # HTTP request handlers
+│   ├── helpers/       # Handler utility functions
+│   └── auth.go        # Authentication endpoints
+├── middleware/        # HTTP middleware (JWT auth)
+├── models/           # Request/response data structures
+├── presenter/        # Response formatting layer
+├── routes/           # Route definitions
+└── services/         # Business logic and service layer
+```
+
+## Architecture
+
+This project follows a layered architecture with clear separation of concerns:
+
+- **Handlers**: Process HTTP requests and responses
+- **Services**: Contain business logic and manage dependencies
+- **Models**: Define data structures for requests/responses
+- **Middleware**: Handle cross-cutting concerns like authentication
+- **Presenters**: Format API responses consistently
+
+## Key Features
+
+### Security
+- Password hashing with bcrypt
+- JWT tokens with JWK-based signing
+- Session key management
+- Token refresh mechanism
+
+### Database
+- PostgreSQL integration with connection pooling
+- SQLC generated queries for type safety
+- Proper SQL injection prevention
+
+### Error Handling
+- Structured JSON error responses
+- Comprehensive logging with context
+- Appropriate HTTP status codes
+
 ## Development
 
-### Code Organization
+### Adding New Routes
+1. Define models in `api/models/`
+2. Create handlers in `api/handlers/`
+3. Register routes in `api/routes/`
+4. Add to service registration in `api/services/server.go`
 
-- **Handlers**: Business logic and database operations
-  - Use dependency injection for database queries
-  - Return Fiber errors for HTTP status codes
-  - Parse request bodies into structs with validation tags
-
-- **Presenters**: Response formatting
-  - Return `*fiber.Map` with consistent structure
-  - Keep response formatting separate from business logic
-
-- **Routes**: HTTP routing configuration
-  - Group related routes (e.g., `/api` prefix)
-  - Pass dependencies (queries) to handlers
-
-### Naming Conventions
-
-- Handlers: `{Entity}{Action}Handler` (e.g., `UserSignUpHandler`)
-- Routes: `{Entity}Router` (e.g., `AuthRouter`)
-- Presenters: `{Action}Response` (e.g., `SignUpSuccessResponse`)
-- Structs: PascalCase with JSON tags for API models
-
-## Dependencies
-
-Key dependencies used in this project:
-
-- `github.com/gofiber/fiber/v2` - Web framework
-- `github.com/lib/pq` - PostgreSQL driver
-- `github.com/google/uuid` - UUID generation
-- `github.com/shopspring/decimal` - Decimal handling
-- `github.com/sushan531/hk_ims_sqlc/generated` - Generated database queries
-
-## Database
-
-- Uses SQLC for type-safe database queries
-- Generated queries are imported from external package
-- Handles SQL null types appropriately (`sql.NullString`, etc.)
-- Uses context from Fiber for database operations
-
-## License
-
-[Add your license here]
+### Database Changes
+This project uses SQLC for database operations. Update your SQL schemas and regenerate queries as needed.
 
 ## Contributing
 
-[Add contribution guidelines here]
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

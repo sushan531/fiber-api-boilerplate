@@ -8,7 +8,7 @@ import (
 )
 
 // JWT middleware for protecting routes
-func JWTMiddleware(authService service.AuthService) fiber.Handler {
+func JWTMiddleware(tokenService service.TokenService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Extract token from Authorization header
 		authHeader := c.Get("Authorization")
@@ -25,7 +25,7 @@ func JWTMiddleware(authService service.AuthService) fiber.Handler {
 		token := parts[1]
 
 		// Verify token
-		claims, err := authService.VerifyToken(token)
+		claims, err := tokenService.VerifyToken(token)
 		if err != nil {
 			return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token"})
 		}

@@ -59,7 +59,7 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 	}
 }
 
-func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tokenService service.AuthService) fiber.Handler {
+func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tokenService service.TokenService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
 
@@ -120,7 +120,7 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 	}
 }
 
-func RefreshTokenHandler(queries *generated.Queries, authService service.AuthService) fiber.Handler {
+func RefreshTokenHandler(queries *generated.Queries, tokenService service.TokenService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
 		// Parse request body
@@ -133,7 +133,7 @@ func RefreshTokenHandler(queries *generated.Queries, authService service.AuthSer
 			})
 		}
 		// Verify the refresh token
-		refreshClaims, err := authService.VerifyRefreshToken(req.RefreshToken)
+		refreshClaims, err := tokenService.VerifyRefreshToken(req.RefreshToken)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid or expired refresh token",
@@ -147,7 +147,7 @@ func RefreshTokenHandler(queries *generated.Queries, authService service.AuthSer
 			})
 		}
 		// Extract keyID from token
-		keyID, err := authService.ExtractKeyIDFromToken(req.RefreshToken)
+		keyID, err := tokenService.ExtractKeyIDFromToken(req.RefreshToken)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid refresh token",
@@ -161,7 +161,7 @@ func RefreshTokenHandler(queries *generated.Queries, authService service.AuthSer
 			})
 		}
 		// Generate refreshed tokens
-		tokenPair, err := authService.RefreshTokensWithKeyID(req.RefreshToken, claims.ToMap(), keyID)
+		tokenPair, err := tokenService.RefreshTokensWithKeyID(req.RefreshToken, claims.ToMap(), keyID)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Failed to refresh tokens",

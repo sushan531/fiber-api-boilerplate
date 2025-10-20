@@ -1,25 +1,20 @@
----
-inclusion: always
----
-
 # Technology Stack
 
 ## Core Technologies
-- **Language**: Go 1.25
-- **Web Framework**: Fiber v2 (Fast HTTP framework)
+- **Language**: Go 1.25.1
+- **Web Framework**: Fiber v2 (Express-inspired Go web framework)
 - **Database**: PostgreSQL with `lib/pq` driver
-- **Code Generation**: SQLC via `github.com/sushan531/hk_ims_sqlc`
+- **Authentication**: Custom JWK-based JWT authentication via `sushan531/jwk-auth`
+- **Database Layer**: SQLC generated queries via `sushan531/auth-sqlc`
 
 ## Key Dependencies
 - `github.com/gofiber/fiber/v2` - Web framework
 - `github.com/lib/pq` - PostgreSQL driver
-- `github.com/google/uuid` - UUID generation
-- `github.com/shopspring/decimal` - Decimal handling
-- `github.com/sushan531/hk_ims_sqlc/generated` - Generated database queries
+- `github.com/sushan531/auth-sqlc` - Generated database queries
+- `github.com/sushan531/jwk-auth` - JWT/JWK authentication library
+- `golang.org/x/crypto/bcrypt` - Password hashing
 
 ## Common Commands
-
-### Development
 ```bash
 # Run the application
 go run main.go
@@ -30,16 +25,14 @@ go build -o fiber-api
 # Install dependencies
 go mod tidy
 
-# Update dependencies
+# Download dependencies
 go mod download
 ```
 
-### Database
-- Database URL format: `postgres://user:password@host:port/dbname?sslmode=disable`
-- Uses SQLC for type-safe database queries
-- Generated queries are imported from external package
+## Database Setup
+The application expects a PostgreSQL database with connection string format:
+```
+postgres://myuser:mypassword@localhost:5432/mydb?sslmode=disable
+```
 
-### Server Configuration
-- Default port: 3000
-- API prefix: `/api`
-- Database connection handled in main.go
+Default server port is 3000.

@@ -1,19 +1,11 @@
----
-inclusion: always
----
-
 # Product Overview
 
-This is a REST API built with Go Fiber framework for user management and authentication. The API provides endpoints for user registration and authentication operations.
+This is a Go-based REST API boilerplate for authentication services built with Fiber framework. The application provides:
 
-## Key Features
-- User signup with profile management
+- User registration and authentication
+- JWT token management with refresh tokens
+- JWK (JSON Web Key) based authentication
 - PostgreSQL database integration
-- RESTful API design
-- JSON request/response handling
+- Role-based access control
 
-## API Endpoints
-- `GET /` - Welcome message
-- `POST /api/signup` - User registration
-
-The API runs on port 3000 and uses PostgreSQL as the primary database.
+The API serves as a foundation for building secure web applications requiring user authentication and authorization.
