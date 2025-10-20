@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fiber-api/api/handlers/helpers"
+	"fiber-api/api/middleware"
 	"fiber-api/api/models"
 	"fiber-api/api/presenter"
 	"log"
@@ -88,10 +89,13 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 			})
 		}
 
-		// Create a new session key
-		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID, "web")
+		// Get device type from middleware
+		deviceType := middleware.GetDeviceType(c)
+
+		// Create a new session key with device type
+		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID, string(deviceType))
 		if err != nil {
-			log.Printf("❌ Failed to create session key for user %s: %v", input.UserEmail, err)
+			log.Printf("❌ Failed to create session key for user %s on device %s: %v", input.UserEmail, deviceType, err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create session key",
 			})

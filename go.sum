@@ -14,6 +14,8 @@ github.com/gofiber/fiber/v2 v2.52.9 h1:YjKl5DOiyP3j0mO61u3NTmK7or8GzzWzCFzkboyP5
 github.com/gofiber/fiber/v2 v2.52.9/go.mod h1:YEcBbO/FB+5M1IZNBP9FO3J9281zgPAreiI1oqg8nDw=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/hashicorp/golang-lru v1.0.2 h1:dV3g9Z/unq5DpblPpw+Oqcv4dU/1omnb4Ok8iPY6p1c=
+github.com/hashicorp/golang-lru v1.0.2/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/klauspost/compress v1.17.9 h1:6KIumPrER1LHsvBVuDa0r5xaG0Es51mhhB9BQB2qeMA=
@@ -69,6 +71,8 @@ github.com/sushan531/jwk-auth v0.0.11 h1:psyLb1nQO1uySTlztfRPBo/Sl7O1dk+otdb5ATi
 github.com/sushan531/jwk-auth v0.0.11/go.mod h1:x+tVGzMA6GsWCrv7W7ci76uuKL4P3LxZYzFQIFO0QOc=
 github.com/sushan531/jwk-auth v0.0.12 h1:FWM4VCfbCnN/zFsW17V6eHOQsJvnTm3aKCJRvfTH66Y=
 github.com/sushan531/jwk-auth v0.0.12/go.mod h1:x+tVGzMA6GsWCrv7W7ci76uuKL4P3LxZYzFQIFO0QOc=
+github.com/ua-parser/uap-go v0.0.0-20250917011043-9c86a9b0f8f0 h1:DHueI9yFvHWHJDas1bZKOILjS+COtvFyYShEd77ak+U=
+github.com/ua-parser/uap-go v0.0.0-20250917011043-9c86a9b0f8f0/go.mod h1:gwANdYmo9R8LLwGnyDFWK2PMsaXXX2HhAvCnb/UhZsM=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasthttp v1.51.0 h1:8b30A5JlZ6C7AS81RsWjYMQmrZG6feChmgAolCl1SqA=

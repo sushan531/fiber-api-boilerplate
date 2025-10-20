@@ -2,9 +2,7 @@ package services
 
 import (
 	"database/sql"
-	"fiber-api/api/routes"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/sushan531/auth-sqlc/generated"
 	"github.com/sushan531/jwk-auth/core/config"
 	"github.com/sushan531/jwk-auth/core/manager"
@@ -51,11 +49,6 @@ func NewAuthAPIService(cfg AuthAPIServiceConfig) (*AuthAPIService, error) {
 		TokenService: tokenService,
 		Config:       cfg.Config,
 	}, nil
-}
-
-// RegisterRoutes registers auth routes to the provided fiber router
-func (am *AuthAPIService) RegisterRoutes(router fiber.Router) {
-	routes.AuthRouter(router, am.Queries, am.JWKManager, am.TokenService)
 }
 
 // Close closes the database connection

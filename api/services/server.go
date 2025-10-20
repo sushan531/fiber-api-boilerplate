@@ -51,13 +51,21 @@ func NewAPIServerService(cfg ServerConfig) (*ServerService, error) {
 
 // RegisterAuthRoutes registers authentication routes
 func (ss *ServerService) RegisterAuthRoutes() {
-	authRoute := ss.App.Group("/api")
-	ss.AuthAPIService.RegisterRoutes(authRoute)
+	authRoute := ss.App.Group("/api", middleware.DeviceDetectionMiddleware())
+	routes.AuthRouter(
+		authRoute,
+		ss.AuthAPIService.GetQueries(),
+		ss.AuthAPIService.GetJWKManager(),
+		ss.AuthAPIService.TokenService,
+	)
 }
 
 // RegisterUserRoutes registers user routes with JWT middleware
 func (ss *ServerService) RegisterUserRoutes() {
-	userRoute := ss.App.Group("/api/user", middleware.JWTMiddleware(ss.AuthAPIService.GetAuthService()))
+	userRoute := ss.App.Group("/api/user",
+		middleware.DeviceDetectionMiddleware(),
+		middleware.JWTMiddleware(ss.AuthAPIService.GetAuthService()),
+	)
 	routes.UserRouter(userRoute, ss.AuthAPIService.GetQueries())
 }
 
@@ -89,9 +97,4 @@ func (ss *ServerService) Close() error {
 // GetApp returns the fiber app instance for custom configuration
 func (ss *ServerService) GetApp() *fiber.App {
 	return ss.App
-}
-
-// GetAuthManager returns the auth manager for external access
-func (ss *ServerService) GetAuthManager() *AuthAPIService {
-	return ss.AuthAPIService
 }
