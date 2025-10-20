@@ -80,8 +80,9 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 			})
 		}
 
-		// Validate password (plaintext comparison — should ideally use bcrypt)
-		if auth.Password != input.Password {
+		// Validate password using bcrypt
+		if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(input.Password)); err != nil {
+			log.Printf("❌ Invalid password attempt for user %s", input.UserEmail)
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid email or password",
 			})
