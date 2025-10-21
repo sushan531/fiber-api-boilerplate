@@ -14,13 +14,14 @@ func GetProfileHandler(queries *generated.Queries) fiber.Handler {
 		ctx := c.Context()
 
 		// Extract user ID from JWT claims
-		userID, ok := c.Locals("user_id").(uuid.UUID)
+		userID, ok := c.Locals("user_id").(string)
+		userUuidID, _ := uuid.Parse(userID)
 		if !ok {
 			return errors.AuthenticationError(c, "Invalid user session")
 		}
 
 		// Fetch user profile
-		userProfile, err := queries.GetUserProfile(ctx, userID)
+		userProfile, err := queries.GetUserProfile(ctx, userUuidID)
 		if err != nil {
 			return errors.NotFoundError(c, "User profile not found")
 		}

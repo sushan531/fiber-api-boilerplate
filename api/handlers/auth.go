@@ -114,7 +114,7 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		deviceType := middleware.GetDeviceType(c)
 
 		// Create a new session key with device type
-		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID, string(deviceType))
+		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID.String(), string(deviceType))
 		if err != nil {
 			log.Printf("❌ Failed to create session key for user %s on device %s: %v", input.UserEmail, deviceType, err)
 			return errors.InternalError(c, "Failed to create session key")
