@@ -13,8 +13,4 @@ func AuthRouter(route fiber.Router, queries *generated.Queries, jwkManager manag
 	route.Post("/signup", handlers.UserSignUpHandler(queries))
 	route.Post("/login", handlers.LoginHandler(queries, jwkManager, tokenService))
 	route.Post("/refresh", handlers.RefreshTokenHandler(queries, tokenService))
-
-	// Device detection example endpoints
-	route.Get("/device-info", handlers.DeviceInfoHandler())
-	route.Post("/login-example", handlers.LoginResponseHandler())
 }
