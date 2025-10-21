@@ -36,10 +36,6 @@ func DeviceDetectionMiddleware() fiber.Handler {
 		// Store device information in context
 		c.Locals("device_type", deviceType)
 		c.Locals("user_agent", userAgent)
-		c.Locals("device_family", client.Device.Family)
-		c.Locals("os_family", client.Os.Family)
-		c.Locals("browser_family", client.UserAgent.Family)
-
 		return c.Next()
 	}
 }

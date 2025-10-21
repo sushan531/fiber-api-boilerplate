@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"database/sql"
+	"fiber-api/api/errors"
 	"fiber-api/api/handlers/helpers"
 	"fiber-api/api/middleware"
 	"fiber-api/api/models"
 	"fiber-api/api/presenter"
+	"fiber-api/api/validators"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,27 +20,33 @@ import (
 func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
+
 		// Parse request body
 		var input models.SignUp
 		if err := c.BodyParser(&input); err != nil {
+			return errors.ValidationError(c, "Invalid request payload")
+		}
+
+		// Validate input
+		validation := validators.ValidateSignUp(input)
+		if !validation.IsValid {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid request payload",
+				"success": false,
+				"error": fiber.Map{
+					"code":    "VALIDATION_ERROR",
+					"message": "Validation failed",
+					"details": validation.Errors,
+				},
 			})
 		}
-		// Validate basic fields (optional but recommended)
-		if input.UserEmail == "" || input.Password == "" || input.FullName == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Email, password, and full name are required",
-			})
-		}
-		// 🔒 Hash the password before storing
+
+		// Hash password
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("❌ Failed to hash password for %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to process password",
-			})
+			return errors.InternalError(c, "Failed to process password")
 		}
+
 		// Prepare user parameters
 		userParams := generated.InsertUserProfileParams{
 			UserEmail: input.UserEmail,
@@ -47,14 +55,20 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 			UserRole:  sql.NullString{String: input.UserRole, Valid: input.UserRole != ""},
 			Address:   sql.NullString{String: input.Address, Valid: input.Address != ""},
 		}
+
 		// Insert new user record
 		user, err := queries.InsertUserProfile(ctx, userParams)
 		if err != nil {
 			log.Printf("❌ Failed to insert user %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Failed to create user — possibly duplicate email",
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"success": false,
+				"error": fiber.Map{
+					"code":    "DUPLICATE_ERROR",
+					"message": "Email already exists",
+				},
 			})
 		}
+
 		// Return success response
 		return c.Status(fiber.StatusCreated).JSON(presenter.SignUpSuccessResponse(user))
 	}
@@ -67,8 +81,19 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		// Parse request body
 		var input models.Login
 		if err := c.BodyParser(&input); err != nil {
+			return errors.ValidationError(c, "Invalid request payload")
+		}
+
+		// Validate input
+		validation := validators.ValidateLogin(input)
+		if !validation.IsValid {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid request payload",
+				"success": false,
+				"error": fiber.Map{
+					"code":    "VALIDATION_ERROR",
+					"message": "Validation failed",
+					"details": validation.Errors,
+				},
 			})
 		}
 
@@ -76,17 +101,13 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		auth, err := queries.GetUserAuth(ctx, input.UserEmail)
 		if err != nil {
 			log.Printf("❌ Failed to fetch user for email %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "User not found",
-			})
+			return errors.AuthenticationError(c, "Invalid email or password")
 		}
 
 		// Validate password using bcrypt
 		if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(input.Password)); err != nil {
 			log.Printf("❌ Invalid password attempt for user %s", input.UserEmail)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid email or password",
-			})
+			return errors.AuthenticationError(c, "Invalid email or password")
 		}
 
 		// Get device type from middleware
@@ -96,30 +117,25 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID, string(deviceType))
 		if err != nil {
 			log.Printf("❌ Failed to create session key for user %s on device %s: %v", input.UserEmail, deviceType, err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create session key",
-			})
+			return errors.InternalError(c, "Failed to create session key")
 		}
 
 		// Create JWT claims
 		claims, err := helpers.CreateJWTClaims(queries, ctx, auth.UserProfileID)
 		if err != nil {
 			log.Printf("❌ Failed to create JWT claims for user %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create JWT claims",
-			})
+			return errors.InternalError(c, "Failed to create JWT claims")
 		}
 
 		// Generate token pair
 		tokenPair, err := tokenService.GenerateTokenPairWithKeyID(claims.ToMap(), keyID)
 		if err != nil {
 			log.Printf("❌ Failed to generate tokens for user %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to generate tokens",
-			})
+			return errors.InternalError(c, "Failed to generate tokens")
 		}
 
 		// Return successful response
+		log.Printf("🚀 User %s logged in successfully from %s device", input.UserEmail, deviceType)
 		return c.JSON(presenter.SignInSuccessResponse(*tokenPair))
 	}
 }
