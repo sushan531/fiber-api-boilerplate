@@ -113,6 +113,10 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		// Get device type from middleware
 		deviceType := middleware.GetDeviceType(c)
 
+		// Generate device fingerprint from User-Agent from request
+		userAgent := c.Get("User-Agent")
+		deviceFingerprint := helpers.GenerateDeviceFingerprint(userAgent)
+
 		// Create a new session key with device type
 		keyID, err := jwkManager.CreateSessionKey(auth.UserProfileID.String(), string(deviceType))
 		if err != nil {
@@ -120,8 +124,8 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 			return errors.InternalError(c, "Failed to create session key")
 		}
 
-		// Create JWT claims
-		claims, err := helpers.CreateJWTClaims(queries, ctx, auth.UserProfileID)
+		// Create JWT claims with device fingerprint
+		claims, err := helpers.CreateJWTClaims(queries, ctx, auth.UserProfileID, deviceFingerprint.Hash)
 		if err != nil {
 			log.Printf("❌ Failed to create JWT claims for user %s: %v", input.UserEmail, err)
 			return errors.InternalError(c, "Failed to create JWT claims")
@@ -173,8 +177,25 @@ func RefreshTokenHandler(queries *generated.Queries, tokenService service.TokenS
 				"error": "Invalid refresh token",
 			})
 		}
-		// Create new JWT claims
-		claims, err := helpers.CreateJWTClaims(queries, ctx, userID)
+		// Extract device fingerprint from refresh token claims
+		storedFingerprint, hasFingerprintClaim := helpers.GetFingerprintFromClaims(refreshClaims)
+		if !hasFingerprintClaim {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid refresh token: missing device fingerprint",
+			})
+		}
+
+		// Validate current device fingerprint against stored one
+		currentUserAgent := c.Get("User-Agent")
+		if !helpers.ValidateDeviceFingerprint(currentUserAgent, storedFingerprint) {
+			log.Printf("❌ Device fingerprint mismatch for user %s during token refresh", userID.String())
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Token cannot be used from this device",
+			})
+		}
+
+		// Create new JWT claims with same device fingerprint
+		claims, err := helpers.CreateJWTClaims(queries, ctx, userID, storedFingerprint)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create JWT claims for token refresh",

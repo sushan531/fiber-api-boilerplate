@@ -9,15 +9,16 @@ import (
 	"github.com/sushan531/auth-sqlc/generated"
 )
 
-func CreateJWTClaims(queries *generated.Queries, context context.Context, userId uuid.UUID) (*models.JWTClaims, error) {
+func CreateJWTClaims(queries *generated.Queries, context context.Context, userId uuid.UUID, deviceFingerprint string) (*models.JWTClaims, error) {
 	profile, err := queries.GetUserProfile(context, userId)
 	if err != nil {
 		return nil, err
 	}
 	claims := &models.JWTClaims{
-		UserID:    profile.UserProfileID.String(),
-		UserEmail: profile.UserEmail,
-		Role:      "admin",
+		UserID:            profile.UserProfileID.String(),
+		UserEmail:         profile.UserEmail,
+		Role:              "admin",
+		DeviceFingerprint: deviceFingerprint,
 	}
 	return claims, nil
 }

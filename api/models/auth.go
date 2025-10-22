@@ -17,16 +17,18 @@ type Login struct {
 
 // JWTClaims represents the claims structure for JWT tokens
 type JWTClaims struct {
-	UserID    string `json:"user_id"`
-	UserEmail string `json:"user_email"`
-	Role      string `json:"role"`
+	UserID            string `json:"user_id"`
+	UserEmail         string `json:"user_email"`
+	Role              string `json:"role"`
+	DeviceFingerprint string `json:"device_fingerprint"`
 }
 
 // ToMap converts JWTClaims struct to map[string]interface{} for JWT token generation
 func (j *JWTClaims) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"user_id":    j.UserID,
-		"user_email": j.UserEmail,
-		"role":       j.Role,
+		"user_id":            j.UserID,
+		"user_email":         j.UserEmail,
+		"role":               j.Role,
+		"device_fingerprint": j.DeviceFingerprint,
 	}
 }
