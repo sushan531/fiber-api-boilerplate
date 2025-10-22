@@ -48,7 +48,7 @@ func JWTMiddleware(tokenService service.TokenService) fiber.Handler {
 		// Generate fingerprint from current User-Agent and compare
 		currentFingerprint := generateDeviceFingerprintHash(currentUserAgent)
 		if currentFingerprint != storedFingerprint {
-			return c.Status(401).JSON(fiber.Map{"error": "Token cannot be used from this device"})
+			return c.Status(401).JSON(fiber.Map{"error": "Device fingerprint mismatch."})
 		}
 
 		// Store claims in context for use in handlers

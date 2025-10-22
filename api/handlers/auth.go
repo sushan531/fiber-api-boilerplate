@@ -190,7 +190,7 @@ func RefreshTokenHandler(queries *generated.Queries, tokenService service.TokenS
 		if !helpers.ValidateDeviceFingerprint(currentUserAgent, storedFingerprint) {
 			log.Printf("❌ Device fingerprint mismatch for user %s during token refresh", userID.String())
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Token cannot be used from this device",
+				"error": "Device fingerprint mismatch.",
 			})
 		}
 
