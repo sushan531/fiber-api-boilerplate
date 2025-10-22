@@ -6,9 +6,9 @@ import (
 
 // APIError represents a structured API error
 type APIError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Details string `json:"details,omitempty"`
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
+	Details interface{} `json:"details,omitempty"`
 }
 
 // ErrorResponse represents the standard error response format
@@ -28,7 +28,7 @@ const (
 )
 
 // NewAPIError creates a new API error
-func NewAPIError(code, message, details string) APIError {
+func NewAPIError(code, message string, details interface{}) APIError {
 	return APIError{
 		Code:    code,
 		Message: message,
@@ -49,7 +49,7 @@ func ValidationError(c *fiber.Ctx, message string) error {
 	return SendError(c, fiber.StatusBadRequest, NewAPIError(
 		ErrCodeValidation,
 		message,
-		"",
+		nil,
 	))
 }
 
@@ -57,7 +57,7 @@ func AuthenticationError(c *fiber.Ctx, message string) error {
 	return SendError(c, fiber.StatusUnauthorized, NewAPIError(
 		ErrCodeAuthentication,
 		message,
-		"",
+		nil,
 	))
 }
 
@@ -65,7 +65,7 @@ func NotFoundError(c *fiber.Ctx, message string) error {
 	return SendError(c, fiber.StatusNotFound, NewAPIError(
 		ErrCodeNotFound,
 		message,
-		"",
+		nil,
 	))
 }
 
@@ -73,6 +73,15 @@ func InternalError(c *fiber.Ctx, message string) error {
 	return SendError(c, fiber.StatusInternalServerError, NewAPIError(
 		ErrCodeInternal,
 		message,
-		"",
+		nil,
+	))
+}
+
+// ValidationErrorWithDetails sends a validation error with detailed field errors
+func ValidationErrorWithDetails(c *fiber.Ctx, message string, details interface{}) error {
+	return SendError(c, fiber.StatusBadRequest, NewAPIError(
+		ErrCodeValidation,
+		message,
+		details,
 	))
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"crypto/sha256"
+	"fiber-api/api/errors"
 	"fmt"
 	"strings"
 
@@ -16,13 +17,13 @@ func JWTMiddleware(tokenService service.TokenService) fiber.Handler {
 		// Extract token from Authorization header
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "Missing authorization header"})
+			return errors.AuthenticationError(c, "Missing authorization header")
 		}
 
 		// Check Bearer format
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid authorization header format"})
+			return errors.AuthenticationError(c, "Invalid authorization header format")
 		}
 
 		token := parts[1]
@@ -30,25 +31,25 @@ func JWTMiddleware(tokenService service.TokenService) fiber.Handler {
 		// Verify token
 		claims, err := tokenService.VerifyToken(token)
 		if err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token"})
+			return errors.AuthenticationError(c, "Invalid or expired token")
 		}
 
 		// Validate device fingerprint
 		storedFingerprint, hasFingerprintClaim := claims["device_fingerprint"].(string)
 		if !hasFingerprintClaim || storedFingerprint == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid token: missing device fingerprint"})
+			return errors.AuthenticationError(c, "Invalid token: missing device fingerprint")
 		}
 
 		// Get current User-Agent from request and validate against stored fingerprint
 		currentUserAgent := c.Get("User-Agent")
 		if currentUserAgent == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "Missing User-Agent header"})
+			return errors.AuthenticationError(c, "Missing User-Agent header")
 		}
 
 		// Generate fingerprint from current User-Agent and compare
 		currentFingerprint := generateDeviceFingerprintHash(currentUserAgent)
 		if currentFingerprint != storedFingerprint {
-			return c.Status(401).JSON(fiber.Map{"error": "Device fingerprint mismatch."})
+			return errors.AuthenticationError(c, "Device fingerprint mismatch")
 		}
 
 		// Store claims in context for use in handlers

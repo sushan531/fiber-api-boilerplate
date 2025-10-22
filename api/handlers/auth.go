@@ -30,14 +30,7 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 		// Validate input
 		validation := validators.ValidateSignUp(input)
 		if !validation.IsValid {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"success": false,
-				"error": fiber.Map{
-					"code":    "VALIDATION_ERROR",
-					"message": "Validation failed",
-					"details": validation.Errors,
-				},
-			})
+			return errors.ValidationErrorWithDetails(c, "Validation failed", validation.Errors)
 		}
 
 		// Hash password
@@ -60,13 +53,11 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 		user, err := queries.InsertUserProfile(ctx, userParams)
 		if err != nil {
 			log.Printf("❌ Failed to insert user %s: %v", input.UserEmail, err)
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"success": false,
-				"error": fiber.Map{
-					"code":    "DUPLICATE_ERROR",
-					"message": "Email already exists",
-				},
-			})
+			return errors.SendError(c, fiber.StatusConflict, errors.NewAPIError(
+				errors.ErrCodeDuplicate,
+				"Email already exists",
+				nil,
+			))
 		}
 
 		// Return success response
@@ -87,14 +78,7 @@ func LoginHandler(queries *generated.Queries, jwkManager manager.JwkManager, tok
 		// Validate input
 		validation := validators.ValidateLogin(input)
 		if !validation.IsValid {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"success": false,
-				"error": fiber.Map{
-					"code":    "VALIDATION_ERROR",
-					"message": "Validation failed",
-					"details": validation.Errors,
-				},
-			})
+			return errors.ValidationErrorWithDetails(c, "Validation failed", validation.Errors)
 		}
 
 		// Fetch user auth record
@@ -152,61 +136,45 @@ func RefreshTokenHandler(queries *generated.Queries, tokenService service.TokenS
 			RefreshToken string `json:"refresh_token"`
 		}
 		if err := c.BodyParser(&req); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid request payload",
-			})
+			return errors.ValidationError(c, "Invalid request payload")
 		}
 		// Verify the refresh token
 		refreshClaims, err := tokenService.VerifyRefreshToken(req.RefreshToken)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid or expired refresh token",
-			})
+			return errors.AuthenticationError(c, "Invalid or expired refresh token")
 		}
 		// Parse user_id from claims
 		userID, err := helpers.ExtractUserIdFromMapObj(refreshClaims)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": err.Error(),
-			})
+			return errors.ValidationError(c, err.Error())
 		}
 		// Extract keyID from token
 		keyID, err := tokenService.ExtractKeyIDFromToken(req.RefreshToken)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid refresh token",
-			})
+			return errors.AuthenticationError(c, "Invalid refresh token")
 		}
 		// Extract device fingerprint from refresh token claims
 		storedFingerprint, hasFingerprintClaim := helpers.GetFingerprintFromClaims(refreshClaims)
 		if !hasFingerprintClaim {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid refresh token: missing device fingerprint",
-			})
+			return errors.AuthenticationError(c, "Invalid refresh token: missing device fingerprint")
 		}
 
 		// Validate current device fingerprint against stored one
 		currentUserAgent := c.Get("User-Agent")
 		if !helpers.ValidateDeviceFingerprint(currentUserAgent, storedFingerprint) {
 			log.Printf("❌ Device fingerprint mismatch for user %s during token refresh", userID.String())
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Device fingerprint mismatch.",
-			})
+			return errors.AuthenticationError(c, "Device fingerprint mismatch")
 		}
 
 		// Create new JWT claims with same device fingerprint
 		claims, err := helpers.CreateJWTClaims(queries, ctx, userID, storedFingerprint)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create JWT claims for token refresh",
-			})
+			return errors.InternalError(c, "Failed to create JWT claims for token refresh")
 		}
 		// Generate refreshed tokens
 		tokenPair, err := tokenService.RefreshTokensWithKeyID(req.RefreshToken, claims.ToMap(), keyID)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Failed to refresh tokens",
-			})
+			return errors.AuthenticationError(c, "Failed to refresh tokens")
 		}
 		return c.JSON(presenter.SignInSuccessResponse(*tokenPair))
 	}
