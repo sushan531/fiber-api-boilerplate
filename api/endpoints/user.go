@@ -1,7 +1,7 @@
-package routes
+package endpoints
 
 import (
-	"fiber-api/api/handlers"
+	"fiber-api/api/handlers/handlers"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sushan531/auth-sqlc/generated"

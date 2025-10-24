@@ -1,6 +1,7 @@
 package presenter
 
 import (
+	"github.com/google/uuid"
 	"github.com/sushan531/auth-sqlc/generated"
 	"github.com/sushan531/jwk-auth/service"
 )
@@ -14,10 +15,10 @@ type BaseResponse struct {
 
 // SignUpResponse represents user registration response data
 type SignUpResponse struct {
-	UserID    string `json:"user_id"`
-	Email     string `json:"email"`
-	FullName  string `json:"full_name"`
-	CreatedAt string `json:"created_at"`
+	UserID         string    `json:"user_id"`
+	Email          string    `json:"email"`
+	Organization   string    `json:"organization"`
+	OrganizationId uuid.UUID `json:"organization_id"`
 }
 
 // SignInResponse represents authentication response data
@@ -29,14 +30,14 @@ type SignInResponse struct {
 }
 
 // SignUpSuccessResponse creates a standardized signup success response
-func SignUpSuccessResponse(data generated.Auth) BaseResponse {
+func SignUpSuccessResponse(user generated.Auth, organization generated.CreateOrganizationWithUserRow) BaseResponse {
 	return BaseResponse{
 		Success: true,
 		Data: SignUpResponse{
-			UserID: data.UserProfileID.String(),
-			Email:  data.UserEmail,
-			//FullName:  data.FullName,
-			//CreatedAt: data.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			UserID:         user.UserProfileID.String(),
+			Email:          user.UserEmail,
+			Organization:   organization.Name,
+			OrganizationId: organization.ID,
 		},
 		Message: "User registered successfully",
 	}

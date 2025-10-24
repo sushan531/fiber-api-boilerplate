@@ -1,8 +1,8 @@
 package services
 
 import (
+	"fiber-api/api/endpoints"
 	"fiber-api/api/middleware"
-	"fiber-api/api/routes"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,27 +49,28 @@ func NewAPIServerService(cfg ServerConfig) (*ServerService, error) {
 	}, nil
 }
 
-// RegisterAuthRoutes registers authentication routes
+// RegisterAuthRoutes registers authentication endpoints
 func (ss *ServerService) RegisterAuthRoutes() {
 	authRoute := ss.App.Group("/api", middleware.DeviceDetectionMiddleware())
-	routes.AuthRouter(
+	endpoints.AuthRouter(
 		authRoute,
+		ss.AuthAPIService.DB,
 		ss.AuthAPIService.GetQueries(),
 		ss.AuthAPIService.GetJWKManager(),
 		ss.AuthAPIService.TokenService,
 	)
 }
 
-// RegisterUserRoutes registers user routes with JWT middleware
+// RegisterUserRoutes registers user endpoints with JWT middleware
 func (ss *ServerService) RegisterUserRoutes() {
 	userRoute := ss.App.Group("/api/user",
 		middleware.DeviceDetectionMiddleware(),
 		middleware.JWTMiddleware(ss.AuthAPIService.GetAuthService()),
 	)
-	routes.UserRouter(userRoute, ss.AuthAPIService.GetQueries())
+	endpoints.UserRouter(userRoute, ss.AuthAPIService.GetQueries())
 }
 
-// RegisterAllRoutes registers both auth and user routes
+// RegisterAllRoutes registers both auth and user endpoints
 func (ss *ServerService) RegisterAllRoutes() {
 	ss.RegisterAuthRoutes()
 	ss.RegisterUserRoutes()

@@ -6,8 +6,8 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
-	github.com/sushan531/auth-sqlc v0.0.12
-	github.com/sushan531/jwk-auth v0.0.11-HK
+	github.com/sushan531/auth-sqlc v0.0.77-HK
+	github.com/sushan531/jwk-auth v0.0.77-HK
 	github.com/ua-parser/uap-go v0.0.0-20250917011043-9c86a9b0f8f0
 	golang.org/x/crypto v0.42.0
 )
@@ -18,7 +18,6 @@ require (
 	github.com/fernet/fernet-go v0.0.0-20240119011108-303da6aec611 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
@@ -33,9 +32,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/spf13/cobra v1.10.1 // indirect
-	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
@@ -43,3 +39,7 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/sushan531/auth-sqlc => /Users/kasper/GolandProjects/auth-sqlc
+
+replace github.com/sushan531/jwk-auth => /Users/kasper/GolandProjects/jwk-auth

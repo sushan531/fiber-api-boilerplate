@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fiber-api/api/errors"
-	"fiber-api/api/presenter"
+	"fiber-api/api/handlers/presenter"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

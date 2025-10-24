@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fiber-api/api/errors"
 	"fiber-api/api/handlers/helpers"
+	"fiber-api/api/handlers/presenter"
+	"fiber-api/api/handlers/validators"
 	"fiber-api/api/middleware"
 	"fiber-api/api/models"
-	"fiber-api/api/presenter"
-	"fiber-api/api/validators"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,10 +17,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
+func UserSignUpHandler(queries *generated.Queries, db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.Context()
-
+		tx, _ := db.Begin()
+		defer tx.Rollback()
 		// Parse request body
 		var input models.SignUp
 		if err := c.BodyParser(&input); err != nil {
@@ -48,9 +49,10 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 			UserRole:  sql.NullString{String: input.UserRole, Valid: input.UserRole != ""},
 			Address:   sql.NullString{String: input.Address, Valid: input.Address != ""},
 		}
+		qtx := queries.WithTx(tx)
 
 		// Insert new user record
-		user, err := queries.InsertUserProfile(ctx, userParams)
+		user, err := qtx.InsertUserProfile(ctx, userParams)
 		if err != nil {
 			log.Printf("❌ Failed to insert user %s: %v", input.UserEmail, err)
 			return errors.SendError(c, fiber.StatusConflict, errors.NewAPIError(
@@ -59,9 +61,15 @@ func UserSignUpHandler(queries *generated.Queries) fiber.Handler {
 				nil,
 			))
 		}
-
+		organization, err := qtx.CreateOrganizationWithUser(
+			ctx,
+			generated.CreateOrganizationWithUserParams{
+				Name:          input.FullName + " Organization",
+				UserProfileID: user.UserProfileID,
+			})
+		_ = tx.Commit()
 		// Return success response
-		return c.Status(fiber.StatusCreated).JSON(presenter.SignUpSuccessResponse(user))
+		return c.Status(fiber.StatusCreated).JSON(presenter.SignUpSuccessResponse(user, organization))
 	}
 }
 

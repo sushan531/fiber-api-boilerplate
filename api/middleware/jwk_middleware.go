@@ -11,7 +11,7 @@ import (
 	"github.com/ua-parser/uap-go/uaparser"
 )
 
-// JWT middleware for protecting routes
+// JWT middleware for protecting endpoints
 func JWTMiddleware(tokenService service.TokenService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Extract token from Authorization header

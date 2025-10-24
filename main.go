@@ -23,7 +23,7 @@ func main() {
 	}
 	defer serverService.Close()
 
-	// Register all routes
+	// Register all endpoints
 	serverService.RegisterAllRoutes()
 
 	// Start the server
