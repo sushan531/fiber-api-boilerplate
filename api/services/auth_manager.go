@@ -61,6 +61,11 @@ func (am *AuthAPIService) GetQueries() *generated.Queries {
 	return am.Queries
 }
 
+// GetQueries returns the queries instance for external use
+func (am *AuthAPIService) GetDB() *sql.DB {
+	return am.DB
+}
+
 // GetJWKManager returns the JWK manager for external use
 func (am *AuthAPIService) GetJWKManager() manager.JwkManager {
 	return am.JWKManager

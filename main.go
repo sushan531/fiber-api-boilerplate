@@ -13,11 +13,12 @@ func main() {
 	appConfig := config.LoadAppConfig()
 
 	// Create server service
-	serverService, err := services.NewAPIServerService(services.ServerConfig{
-		DatabaseURL: appConfig.Database.URL,
-		Port:        appConfig.Server.Port,
-		Config:      appConfig.JWK,
-	})
+	serverService, err := services.NewAPIServerService(
+		services.ServerConfig{
+			DatabaseURL: appConfig.Database.URL,
+			Port:        appConfig.Server.Port,
+			Config:      appConfig.JWK,
+		})
 	if err != nil {
 		log.Fatal("Failed to create server service:", err)
 	}

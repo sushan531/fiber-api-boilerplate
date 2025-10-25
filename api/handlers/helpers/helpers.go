@@ -2,8 +2,10 @@ package helpers
 
 import (
 	"context"
+	"crypto/rand"
 	"fiber-api/api/models"
 	"fmt"
+	"math/big"
 
 	"github.com/google/uuid"
 	"github.com/sushan531/auth-sqlc/generated"
@@ -41,4 +43,18 @@ func ExtractUserIdFromMapObj(claims map[string]interface{}) (uuid.UUID, error) {
 	}
 
 	return userID, nil
+}
+
+// GenerateUniqueOrganizationName creates a unique organization name by appending random characters
+func GenerateUniqueOrganizationName(baseName string) string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const suffixLength = 6
+
+	suffix := make([]byte, suffixLength)
+	for i := range suffix {
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		suffix[i] = charset[num.Int64()]
+	}
+
+	return fmt.Sprintf("%s-Organization-%s", baseName, string(suffix))
 }

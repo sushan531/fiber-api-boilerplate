@@ -61,10 +61,13 @@ func UserSignUpHandler(queries *generated.Queries, db *sql.DB) fiber.Handler {
 				nil,
 			))
 		}
+		// Generate unique organization name with random suffix
+		uniqueOrgName := helpers.GenerateUniqueOrganizationName(input.FullName)
+
 		organization, err := qtx.CreateOrganizationWithUser(
 			ctx,
 			generated.CreateOrganizationWithUserParams{
-				Name:          input.FullName + " Organization",
+				Name:          uniqueOrgName,
 				UserProfileID: user.UserProfileID,
 			})
 		_ = tx.Commit()

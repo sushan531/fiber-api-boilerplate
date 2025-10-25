@@ -54,7 +54,7 @@ func (ss *ServerService) RegisterAuthRoutes() {
 	authRoute := ss.App.Group("/api", middleware.DeviceDetectionMiddleware())
 	endpoints.AuthRouter(
 		authRoute,
-		ss.AuthAPIService.DB,
+		ss.AuthAPIService.GetDB(),
 		ss.AuthAPIService.GetQueries(),
 		ss.AuthAPIService.GetJWKManager(),
 		ss.AuthAPIService.TokenService,
