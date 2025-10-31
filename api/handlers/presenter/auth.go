@@ -30,7 +30,11 @@ type SignInResponse struct {
 }
 
 // SignUpSuccessResponse creates a standardized signup success response
-func SignUpSuccessResponse(user generated.Auth, organization generated.CreateOrganizationWithUserRow) BaseResponse {
+func SignUpSuccessResponse(
+	user generated.Auth,
+	organization generated.CreateOrganizationWithUserRow,
+	branch generated.CreateBranchAndUpdateUserAccessRow,
+) BaseResponse {
 	return BaseResponse{
 		Success: true,
 		Data: SignUpResponse{

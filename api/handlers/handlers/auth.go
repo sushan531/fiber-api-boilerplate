@@ -19,60 +19,62 @@ import (
 
 func UserSignUpHandler(queries *generated.Queries, db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		fullName := c.Locals("full_name").(string)
+		userEmail := c.Locals("user_email").(string)
+		userRole := c.Locals("user_role").(string)
+		address := c.Locals("address").(string)
+		hashedPassword := c.Locals("hashed_password").(string)
+
 		ctx := c.Context()
 		tx, _ := db.Begin()
 		defer tx.Rollback()
-		// Parse request body
-		var input models.SignUp
-		if err := c.BodyParser(&input); err != nil {
-			return errors.ValidationError(c, "Invalid request payload")
-		}
 
-		// Validate input
-		validation := validators.ValidateSignUp(input)
-		if !validation.IsValid {
-			return errors.ValidationErrorWithDetails(c, "Validation failed", validation.Errors)
-		}
-
-		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Printf("❌ Failed to hash password for %s: %v", input.UserEmail, err)
-			return errors.InternalError(c, "Failed to process password")
-		}
-
-		// Prepare user parameters
-		userParams := generated.InsertUserProfileParams{
-			UserEmail: input.UserEmail,
-			Password:  string(hashedPassword),
-			FullName:  input.FullName,
-			UserRole:  sql.NullString{String: input.UserRole, Valid: input.UserRole != ""},
-			Address:   sql.NullString{String: input.Address, Valid: input.Address != ""},
-		}
 		qtx := queries.WithTx(tx)
 
 		// Insert new user record
-		user, err := qtx.InsertUserProfile(ctx, userParams)
+		user, err := qtx.InsertUserProfile(ctx,
+			generated.InsertUserProfileParams{
+				UserEmail: userEmail,
+				Password:  hashedPassword,
+				FullName:  fullName,
+				UserRole:  sql.NullString{String: userRole, Valid: userRole != ""},
+				Address:   sql.NullString{String: address, Valid: address != ""},
+			},
+		)
 		if err != nil {
-			log.Printf("❌ Failed to insert user %s: %v", input.UserEmail, err)
-			return errors.SendError(c, fiber.StatusConflict, errors.NewAPIError(
-				errors.ErrCodeDuplicate,
-				"Email already exists",
-				nil,
-			))
+			return ReturnErrorResponse(c, err)
 		}
-		// Generate unique organization name with random suffix
-		uniqueOrgName := helpers.GenerateUniqueOrganizationName(input.FullName)
 
+		// Generate unique organization name with random suffix
+		uniqueOrgName := helpers.GenerateUniqueOrganizationName(fullName)
 		organization, err := qtx.CreateOrganizationWithUser(
 			ctx,
 			generated.CreateOrganizationWithUserParams{
 				Name:          uniqueOrgName,
 				UserProfileID: user.UserProfileID,
 			})
+		if err != nil {
+			return ReturnErrorResponse(c, err)
+		}
+
+		// Generate unique branch name with random suffix
+		uniqueBranchName := helpers.GenerateUniqueBranchName(fullName)
+		branch, err := qtx.CreateBranchAndUpdateUserAccess(
+			ctx,
+			generated.CreateBranchAndUpdateUserAccessParams{
+				OrganizationID: organization.ID,
+				UserProfileID:  user.UserProfileID,
+				BranchName:     uniqueBranchName,
+				UniqueName:     uniqueBranchName,
+			},
+		)
+		if err != nil {
+			return ReturnErrorResponse(c, err)
+		}
+
 		_ = tx.Commit()
 		// Return success response
-		return c.Status(fiber.StatusCreated).JSON(presenter.SignUpSuccessResponse(user, organization))
+		return c.Status(fiber.StatusCreated).JSON(presenter.SignUpSuccessResponse(user, organization, branch))
 	}
 }
 

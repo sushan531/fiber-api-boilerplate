@@ -58,3 +58,17 @@ func GenerateUniqueOrganizationName(baseName string) string {
 
 	return fmt.Sprintf("%s-Organization-%s", baseName, string(suffix))
 }
+
+// GenerateUniqueOrganizationName creates a unique organization name by appending random characters
+func GenerateUniqueBranchName(baseName string) string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const suffixLength = 6
+
+	suffix := make([]byte, suffixLength)
+	for i := range suffix {
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		suffix[i] = charset[num.Int64()]
+	}
+
+	return fmt.Sprintf("%s-Branch-%s", baseName, string(suffix))
+}
